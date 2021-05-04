@@ -1,7 +1,7 @@
 #include "ccs811.h"
 
 #define ENABLE_ACK_CHECK (true)
-#define DISABLE_NACK_CHECK (false)
+#define DISABLE_ACK_CHECK (false)
 
 static ccs811_config_t *config_table;
 
@@ -17,7 +17,7 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
     uint8_t data = 0;
 
     status = ccs811_read_reg(0x20, &data, 1);
-    printf("%d\n", data);
+    printf("WHO AM I is %x\n", data);
 
     return status;
 }
@@ -119,14 +119,14 @@ int8_t ccs811_read_reg(uint8_t reg_address, uint8_t *data, uint8_t size)
 
     if (status == CCS811_SUCCESS) {
         if (size > 1) {
-            status = i2c_master_read(cmd_handle, data, size - 1, I2C_MASTER_ACK);
+            status = i2c_master_read(cmd_handle, data, size-1, I2C_MASTER_ACK);
         }
     } else {
         goto ERROR;
     }
 
     if (status == CCS811_SUCCESS) {
-        status = i2c_master_read_byte(cmd_handle, data+size-1, I2C_MASTER_ACK);
+        status = i2c_master_read_byte(cmd_handle, data+size-1, I2C_MASTER_NACK);
     } else {
         goto ERROR;
     }
