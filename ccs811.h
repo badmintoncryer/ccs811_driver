@@ -64,7 +64,7 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config);
 int8_t ccs811_exit();
 // int8_t ccs811_one_shot_measure(ccs811_measure_data_t *measure_data);
 int8_t ccs811_get_measure_data(ccs811_measure_data_t *measure_data);
-int8_t ccs811_write_environment_value(ccs811_environment_data_t *environment_data);
+int8_t ccs811_write_environment_value(float temperature, float humidity);
 int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold);
 int8_t ccs811_get_hardware_id(uint8_t *hardware_id);
 int8_t ccs811_get_hardware_version(uint8_t *hardware_version);

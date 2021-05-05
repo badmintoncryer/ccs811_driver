@@ -8,6 +8,19 @@ static ccs811_config_t *config_table;
 /* Static functions */
 static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config);
 
+static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config)
+{
+    int8_t status = CCS811_SUCCESS;
+    uint8_t write_data = 0;
+
+    write_data = (ccs811_config->drive_mode << 4)
+               | (ccs811_config->interruput_enable << 3)
+               | (ccs811_config->thresh_enable << 2);
+    status = ccs811_write_reg(0x01, &write_data, 1);
+
+    return status;
+}
+
 /* CCS811の初期化を行う。 */
 int8_t ccs811_init(ccs811_config_t *ccs811_config)
 {
@@ -63,15 +76,45 @@ ERROR:
     return CCS811_ERROR;
 }
 
-static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config)
+int8_t ccs811_get_measure_data(ccs811_measure_data_t *ccs811_measure_data)
 {
-    int8_t status = CCS811_SUCCESS;
-    uint8_t write_data = 0;
+    if (ccs811_measure_data == NULL) {
+        return CCS811_ERROR;
+    }
 
-    write_data = (ccs811_config->drive_mode << 6)
-               | (ccs811_config->interruput_enable << 3)
-               | (ccs811_config->thresh_enable << 2);
-    status = ccs811_write_reg(0x01, &write_data, 1);
+    int8_t status = CCS811_SUCCESS;
+    uint8_t data[8] = {0};
+
+    status = ccs811_read_reg(0x02, data, (sizeof(data) / sizeof(data[0])));
+    if (status != CCS811_SUCCESS) {
+        ccs811_measure_data->eco2 = (((uint16_t)data[0] << 8) | (uint16_t)data[1]);
+        ccs811_measure_data->tvoc = (((uint16_t)data[2] << 8) | (uint16_t)data[3]);
+        ccs811_measure_data->status = data[4];
+        ccs811_measure_data->error_id = data[5];
+        ccs811_measure_data->raw_data = (((uint16_t)data[6] << 8) | (uint16_t)data[7]);
+    } else {
+        goto ERROR;
+    }
+
+    return status;
+
+ERROR:
+    return CCS811_ERROR;
+}
+
+int8_t ccs811_write_environment_value(float temperature, float humidity)
+{
+    uint8_t status = CCS811_SUCCESS;
+    uint16_t ccs811_temp = (uint16_t)((temperature + 25) * 512);
+    uint16_t ccs811_hum = (uint16_t)(humidity * 512);
+
+    uint8_t data[4];
+    data[0] = ccs811_hum << 8;
+    data[1] = ccs811_hum & 0x00FF;
+    data[2] = ccs811_temp << 8;
+    data[3] = ccs811_temp & 0x00FF;
+
+    status = ccs811_write_reg(0x05, data, 4);
 
     return status;
 }
