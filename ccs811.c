@@ -5,6 +5,9 @@
 
 static ccs811_config_t *config_table;
 
+/* Static functions */
+static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config);
+
 /* CCS811の初期化を行う。 */
 int8_t ccs811_init(ccs811_config_t *ccs811_config)
 {
@@ -14,10 +17,61 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
     config_table = ccs811_config;
 
     int8_t status = CCS811_SUCCESS;
-    uint8_t data = 0;
+    uint8_t hardware_id = 0;
+    uint8_t status_reg_val = 0;
 
-    status = ccs811_read_reg(0x20, &data, 1);
-    printf("WHO AM I is %x\n", data);
+    status = ccs811_read_reg(0x20, &hardware_id, 1);
+    if (status == CCS811_SUCCESS) {
+        if (hardware_id != 0x81) {
+            printf("This device is not CCS811!!\n");
+            goto ERROR;
+        }
+        status = ccs811_read_reg(0x00, &status_reg_val, 1);
+    } else {
+        goto ERROR;
+    }
+
+    if (status == CCS811_SUCCESS) {
+        if (((status_reg_val & 0x10) >> 4) != 1) {
+            printf("Application firmware is not loaded!\n");
+            goto ERROR;
+        }
+        status = ccs811_write_reg(0xF4, &status_reg_val, 0);
+    } else {
+        goto ERROR;
+    }
+
+    if (status == CCS811_SUCCESS) {
+        status = ccs811_read_reg(0x00, &status_reg_val, 1);
+    } else {
+        goto ERROR;
+    }
+
+    if (status == CCS811_SUCCESS) {
+        if (((status_reg_val & 0x80) >> 7) != 1) {
+            printf("Firmware is not application mode now!\n");
+            goto ERROR;
+        }
+        status = ccs811_set_measure_setting(config_table);
+    } else {
+        goto ERROR;
+    }
+
+    return status;
+
+ERROR:
+    return CCS811_ERROR;
+}
+
+static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config)
+{
+    int8_t status = CCS811_SUCCESS;
+    uint8_t write_data = 0;
+
+    write_data = (ccs811_config->drive_mode << 6)
+               | (ccs811_config->interruput_enable << 3)
+               | (ccs811_config->thresh_enable << 2);
+    status = ccs811_write_reg(0x01, &write_data, 1);
 
     return status;
 }
@@ -48,10 +102,12 @@ int8_t ccs811_write_reg(uint8_t reg_address, uint8_t *data, uint8_t size)
         goto ERROR;
     }
 
-    if (status == CCS811_SUCCESS) {
-        status = i2c_master_write(cmd_handle, data, size, ENABLE_ACK_CHECK);
-    } else {
-        goto ERROR;
+    if (size != 0) {
+        if (status == CCS811_SUCCESS) {
+            status = i2c_master_write(cmd_handle, data, size, ENABLE_ACK_CHECK);
+        } else {
+            goto ERROR;
+        }
     }
 
     if (status == CCS811_SUCCESS) {
@@ -86,7 +142,6 @@ int8_t ccs811_read_reg(uint8_t reg_address, uint8_t *data, uint8_t size)
     }
 
     int8_t status = CCS811_SUCCESS;
-
     i2c_cmd_handle_t cmd_handle = i2c_cmd_link_create();
     status = i2c_master_start(cmd_handle);
     if (status == CCS811_SUCCESS) {
