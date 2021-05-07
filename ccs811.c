@@ -131,8 +131,6 @@ int8_t ccs811_write_environment_value(float temperature, float humidity)
     uint16_t ccs811_temp = (uint16_t)((temperature + 25) * 512);
     uint16_t ccs811_hum = (uint16_t)(humidity * 512);
 
-    printf("temp = %d, hum = %d\n", ccs811_temp, ccs811_hum);
-
     uint8_t data[4];
     data[0] = ccs811_hum << 8;
     data[1] = ccs811_hum & 0x00FF;
@@ -141,9 +139,7 @@ int8_t ccs811_write_environment_value(float temperature, float humidity)
 
     status = ccs811_write_reg(0x05, data, 4);
 
-    if (status == CCS811_SUCCESS) {
-        printf("write environment value is succeess.\n");
-    } else {
+    if (status != CCS811_SUCCESS) {
         printf("write environment value is failed.\n");
     }
 
