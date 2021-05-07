@@ -203,7 +203,6 @@ int8_t ccs811_get_measure_data(ccs811_measure_data_t *ccs811_measure_data)
         ccs811_measure_data->error_id = data[ERROR_ID_BYTE];
         ccs811_measure_data->raw_data = (((uint16_t)data[RAW_DATA_UPPER_BYTE] << UPPER_BYTE_SHIFT)
                                         | (uint16_t)data[RAW_DATA_LOWER_BYTE]);
-        printf("read measure data is succeeded.\n");
     } else {
         printf("read measure data is failed.\n");
         return CCS811_ERROR;
