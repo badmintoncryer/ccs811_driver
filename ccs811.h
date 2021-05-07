@@ -71,7 +71,6 @@ int8_t ccs811_get_hardware_version(uint8_t *hardware_version);
 int8_t ccs811_get_firmware_bootloader_version(uint16_t *bootloader_version);
 int8_t ccs811_get_firmware_app_version(uint16_t *app_version);
 int8_t ccs811_get_error_id(uint8_t *error_id);
-int8_t ccs811_app_verify();
 int8_t ccs811_software_reset();
 int8_t ccs811_read_reg(uint8_t reg_addr, uint8_t *data, uint8_t size);
 int8_t ccs811_write_reg(uint8_t reg_addr, uint8_t *data, uint8_t size);

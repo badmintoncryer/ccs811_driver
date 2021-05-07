@@ -36,20 +36,16 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
     status = ccs811_get_hardware_id(&hardware_id);
     if (status == CCS811_SUCCESS) {
         if (hardware_id != 0x81) {
-            printf("This device is not CCS811!!\n");
+            printf("This device is not CCS811.\n");
             goto ERROR;
         }
-        /* Doing a software reset */
-        static uint8_t software_reset[4] = { 0x11, 0xE5, 0x72, 0x8A };
-        status = ccs811_write_reg(0xFF, software_reset, 4);
+        status = ccs811_software_reset();
     } else {
         printf("Could not read hardware_id register.\n");
         goto ERROR;
     }
 
     if (status == CCS811_SUCCESS) {
-        /* Wait 100ms after the reset */
-        vTaskDelay(100 / portTICK_PERIOD_MS);
         /* Get the status to check whether sensor is in bootloader mode. */
         status = ccs811_read_reg(0x00, &status_reg_val, 1);
     } else {
@@ -240,6 +236,55 @@ int8_t ccs811_get_firmware_app_version(uint16_t *app_version)
 
     if (status != CCS811_SUCCESS) {
         printf("Get firmware application version is failed\n");
+    }
+
+    return status;
+}
+
+int8_t ccs811_get_error_id(uint8_t *error_id)
+{
+    if (error_id == NULL) {
+        printf("error_id is NULL\n");
+    }
+
+    uint8_t status = CCS811_SUCCESS;
+    status = ccs811_read_reg(0xE0, error_id, 1);
+    if (status == CCS811_SUCCESS) {
+        if (*error_id & 0x01) {
+            printf("MSG INVALID error has occured.\n");
+        }
+        if (*error_id & 0x02 >> 1) {
+            printf("READ_REG INVALID error has occured.\n");
+        }
+        if (*error_id & 0x04 >> 2) {
+            printf("MEASMODE INVALID error has occured.\n");
+        }
+        if (*error_id & 0x08 >> 3) {
+            printf("MAX RESISTANCE error has occured.\n");
+        }
+        if (*error_id & 0x10 >> 4) {
+            printf("HEATER FAULT error has occured.\n");
+        }
+        if (*error_id & 0x20 >> 5) {
+            printf("HEATER SUPPLY error has occured.\n");
+        }
+    } else {
+        printf("Get error id is failed.\n");
+    }
+
+    return status;
+}
+
+int8_t ccs811_software_reset(void){
+
+    int8_t status = CCS811_SUCCESS;
+    static uint8_t software_reset[4] = { 0x11, 0xE5, 0x72, 0x8A };
+    status = ccs811_write_reg(0xFF, software_reset, 4);
+
+    if (status == CCS811_SUCCESS) {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    } else {
+        printf("Could not resrt the sensor.\n");
     }
 
     return status;
