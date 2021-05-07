@@ -56,13 +56,13 @@ typedef struct ccs811_environment_data {
 } ccs811_environment_data_t;
 
 typedef struct ccs811_eco2_threshold {
-    uint16_t upper_thresh;
     uint16_t lower_thresh;
+    uint16_t upper_thresh;
+    uint8_t hysteresis;
 } ccs811_eco2_threshold_t;
 
 int8_t ccs811_init(ccs811_config_t *ccs811_config);
 int8_t ccs811_exit();
-// int8_t ccs811_one_shot_measure(ccs811_measure_data_t *measure_data);
 int8_t ccs811_get_measure_data(ccs811_measure_data_t *measure_data);
 int8_t ccs811_write_environment_value(float temperature, float humidity);
 int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold);

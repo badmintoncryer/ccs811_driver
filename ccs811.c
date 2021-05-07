@@ -150,6 +150,33 @@ int8_t ccs811_write_environment_value(float temperature, float humidity)
     return status;
 }
 
+int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold)
+{
+    if (eco2_threshold == NULL) {
+        printf("eco2_threshold is NULL.\n");
+        return CCS811_ERROR;
+    }
+
+    uint8_t status = CCS811_SUCCESS;
+    uint8_t data[5] = {0};
+
+    data[0] = (uint8_t)(eco2_threshold->lower_thresh >> 8);
+    data[1] = (uint8_t)(eco2_threshold->lower_thresh & 0x00FF);
+    data[2] = (uint8_t)(eco2_threshold->upper_thresh >> 8);
+    data[3] = (uint8_t)(eco2_threshold->upper_thresh & 0x00FF);
+    data[4] = eco2_threshold->hysteresis;
+
+    status = ccs811_write_reg(0x10, data, 5);
+
+    if (status != CCS811_SUCCESS) {
+        printf("write eco2 threshold is failed\n");
+    } else {
+        printf("write eco2 threshold is succeeded.\n");
+    }
+
+    return status;
+}
+
 /* CCS811レジスタへの書き込み */
 int8_t ccs811_write_reg(uint8_t reg_address, uint8_t *data, uint8_t size)
 {
