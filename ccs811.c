@@ -39,8 +39,21 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
             printf("This device is not CCS811!!\n");
             goto ERROR;
         }
+        /* Doing a software reset */
+        static uint8_t software_reset[4] = { 0x11, 0xE5, 0x72, 0x8A };
+        status = ccs811_write_reg(0xFF, software_reset, 4);
+    } else {
+        printf("Could not read hardware_id register.\n");
+        goto ERROR;
+    }
+
+    if (status == CCS811_SUCCESS) {
+        /* Wait 100ms after the reset */
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        /* Get the status to check whether sensor is in bootloader mode. */
         status = ccs811_read_reg(0x00, &status_reg_val, 1);
     } else {
+        printf("Could not resrt the sensor.\n");
         goto ERROR;
     }
 
@@ -49,24 +62,35 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
             printf("Application firmware is not loaded!\n");
             goto ERROR;
         }
+        /* Switch to application mode */
         status = ccs811_write_reg(0xF4, &status_reg_val, 0);
     } else {
+        printf("Could not read status register.\n");
         goto ERROR;
     }
 
     if (status == CCS811_SUCCESS) {
+        /* Wait 100ms after starting the app. */
+        vTaskDelay(100 / portTICK_PERIOD_MS);
         status = ccs811_read_reg(0x00, &status_reg_val, 1);
     } else {
+        printf("Could not start application.\n");
         goto ERROR;
     }
 
     if (status == CCS811_SUCCESS) {
         if (((status_reg_val & 0x80) >> 7) != 1) {
-            printf("Firmware is not application mode now!\n");
+            printf("Firmware is not application mode now,\n");
             goto ERROR;
         }
         status = ccs811_set_measure_setting(config_table);
     } else {
+        printf("Could not read status register!\n");
+        goto ERROR;
+    }
+
+    if (status != CCS811_SUCCESS) {
+        printf("Could not set measurement settings.\n");
         goto ERROR;
     }
 
