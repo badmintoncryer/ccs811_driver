@@ -192,6 +192,7 @@ int8_t ccs811_get_hardware_version(uint8_t *hardware_version)
 {
     if (hardware_version == NULL) {
         printf("hardware_version is NULLl\n");
+        return CCS811_ERROR;
     }
 
     uint8_t status = CCS811_SUCCESS;
@@ -199,6 +200,26 @@ int8_t ccs811_get_hardware_version(uint8_t *hardware_version)
 
     if (status != CCS811_SUCCESS) {
         printf("Get hardware version is failed.\n");
+    }
+
+    return status;
+}
+
+int8_t ccs811_get_firmware_bootloader_version(uint16_t *firmware_version)
+{
+    if (firmware_version == NULL) {
+        printf("firmware_version is NULL\n");
+        return CCS811_ERROR;
+    }
+
+    int8_t status = CCS811_SUCCESS;
+    uint8_t data[2] = {0};
+
+    status = ccs811_read_reg(0x23, data, 2);
+    *firmware_version = (uint16_t)data[0] | data[1];
+
+    if (status != CCS811_SUCCESS) {
+        printf("Get firmware bootloader version is failed\n");
     }
 
     return status;

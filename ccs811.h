@@ -68,7 +68,7 @@ int8_t ccs811_write_environment_value(float temperature, float humidity);
 int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold);
 int8_t ccs811_get_hardware_id(uint8_t *hardware_id);
 int8_t ccs811_get_hardware_version(uint8_t *hardware_version);
-int8_t ccs811_get_firmware_version(uint16_t *firmware_version);
+int8_t ccs811_get_firmware_bootloader_version(uint16_t *firmware_version);
 int8_t ccs811_get_firmware_app_version(uint16_t *firmware_app_version);
 int8_t ccs811_get_error_id(uint8_t *error_id);
 int8_t ccs811_app_verify();
