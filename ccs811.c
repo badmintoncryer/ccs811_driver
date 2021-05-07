@@ -110,7 +110,7 @@ int8_t ccs811_get_measure_data(ccs811_measure_data_t *ccs811_measure_data)
     uint8_t data[8] = {0};
 
     status = ccs811_read_reg(0x02, &data[0], 8);
-    if (status != CCS811_SUCCESS) {
+    if (status == CCS811_SUCCESS) {
         ccs811_measure_data->eco2 = (((uint16_t)data[0] << 8) | (uint16_t)data[1]);
         ccs811_measure_data->tvoc = (((uint16_t)data[2] << 8) | (uint16_t)data[3]);
         ccs811_measure_data->status = data[4];
@@ -119,13 +119,10 @@ int8_t ccs811_get_measure_data(ccs811_measure_data_t *ccs811_measure_data)
         printf("read measure data is succeeded.\n");
     } else {
         printf("read measure data is failed.\n");
-        goto ERROR;
+        return CCS811_ERROR;
     }
 
     return status;
-
-ERROR:
-    return CCS811_ERROR;
 }
 
 int8_t ccs811_write_environment_value(float temperature, float humidity)
