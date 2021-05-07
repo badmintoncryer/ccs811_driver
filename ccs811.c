@@ -1,7 +1,5 @@
 #include "ccs811.h"
 
-#define ENABLE_ACK_CHECK (true)
-#define DISABLE_ACK_CHECK (false)
 /* Register */
 #define STATUS_REG (0x00)
 #define MEAS_MODE_REG (0x01)
@@ -19,19 +17,13 @@
 #define APP_START_REG (0xF4)
 #define SW_RESET_REG (0xFF)
 
+/* define */
+#define ENABLE_ACK_CHECK (true)
+#define DISABLE_ACK_CHECK (false)
 #define ONE_BYTE (1)
 #define READ_ONE_BYTE (1)
-#define READ_TWO_BYTE (2)
-#define READ_THREE_BYTE (3)
-#define READ_FOUR_BYTE (4)
-#define READ_FIVE_BYTE (5)
 #define WRITE_NO_DATA (0)
 #define WRITE_ONE_BYTE (1)
-#define WRITE_TWO_BYTE (2)
-#define WRITE_THREE_BYTE (3)
-#define WRITE_FOUR_BYTE (4)
-#define WRITE_FIVE_BYTE (5)
-
 #define DRIVE_MODE_SHIFT (4)
 #define INTERRUPT_ENABLE_SHIFT (3)
 #define THRESH_ENABLE_SHIFT (2)
@@ -58,7 +50,7 @@
 #define CCS811_TEMPERATURE_CORRECTION_FACTOR (512)
 #define CCS811_HUMIDITY_CORRECTION_FACTOR (512)
 #define ENVIRONMENT_VALUE_ARRAY_LENGTH (4)
-#define LOWER_BYTE_MASK (0x00FF)
+#define LOWER_BYTE_MASK (0xFF)
 #define HUMIDITY_UPPER_BYTE (0)
 #define HUMIDITY_LOWER_BYTE (1)
 #define TEMPERATURE_UPPER_BYTE (2)
@@ -97,8 +89,6 @@
 static ccs811_config_t *config_table;
 
 /* Static functions */
-static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config);
-
 static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config)
 {
     int8_t status = CCS811_SUCCESS;
@@ -112,9 +102,12 @@ static int8_t ccs811_set_measure_setting(ccs811_config_t *ccs811_config)
     return status;
 }
 
-/* CCS811の初期化を行う。 */
+/* Public functions */
+/* Perfome CCS811 initialization.
+ * Basically, I followed the procedure in the datasheet, but only added a software reset. */
 int8_t ccs811_init(ccs811_config_t *ccs811_config)
 {
+    /* argument check */
     if (ccs811_config == NULL) {
         return CCS811_ERROR;
     }
@@ -124,6 +117,7 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
     uint8_t hardware_id = 0;
     uint8_t status_reg_val = 0;
 
+    /* Check the hardware ID of the CCS811 */
     status = ccs811_get_hardware_id(&hardware_id);
     if (status == CCS811_SUCCESS) {
         if (hardware_id != CCS811_HARDWARE_ID) {
@@ -145,6 +139,7 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
     }
 
     if (status == CCS811_SUCCESS) {
+        /* Check the application firmware */
         if (((status_reg_val & APP_VALID_MASK) >> APP_VALID_SHIFT != APP_VALID_TRUE)) {
             printf("Application firmware is not loaded!\n");
             goto ERROR;
@@ -159,6 +154,7 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
     if (status == CCS811_SUCCESS) {
         /* Wait 100ms after starting the app. */
         vTaskDelay(DELAY_100_MS);
+        /* Check mode  */
         status = ccs811_read_reg(STATUS_REG, &status_reg_val, READ_ONE_BYTE);
     } else {
         printf("Could not start application.\n");
@@ -189,6 +185,7 @@ ERROR:
 
 int8_t ccs811_get_measure_data(ccs811_measure_data_t *ccs811_measure_data)
 {
+    /* argument check */
     if (ccs811_measure_data == NULL) {
         return CCS811_ERROR;
     }
@@ -218,6 +215,7 @@ int8_t ccs811_get_measure_data(ccs811_measure_data_t *ccs811_measure_data)
 int8_t ccs811_write_environment_value(float temperature, float humidity)
 {
     uint8_t status = CCS811_SUCCESS;
+    /* Correct humidity and temperature according to register specifications. */
     uint16_t ccs811_temp = (uint16_t)((temperature + TEMPERATURE_OFFSET)
                                       * CCS811_TEMPERATURE_CORRECTION_FACTOR);
     uint16_t ccs811_hum = (uint16_t)(humidity * CCS811_HUMIDITY_CORRECTION_FACTOR);
@@ -239,6 +237,7 @@ int8_t ccs811_write_environment_value(float temperature, float humidity)
 
 int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold)
 {
+    /* argument check */
     if (eco2_threshold == NULL) {
         printf("eco2_threshold is NULL.\n");
         return CCS811_ERROR;
@@ -246,7 +245,6 @@ int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold)
 
     uint8_t status = CCS811_SUCCESS;
     uint8_t data[THRESHOLD_ARRAY_LENGTH] = {0};
-
     data[LOWER_THRESH_UPPER_BYTE] = (uint8_t)(eco2_threshold->lower_thresh >> UPPER_BYTE_SHIFT);
     data[LOWER_THRESH_LOWER_BYTE] = (uint8_t)(eco2_threshold->lower_thresh & LOWER_BYTE_MASK);
     data[UPPER_THRESH_UPPER_BYTE] = (uint8_t)(eco2_threshold->upper_thresh >> UPPER_BYTE_SHIFT);
@@ -264,6 +262,7 @@ int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold)
 
 int8_t ccs811_get_hardware_id(uint8_t *hardware_id)
 {
+    /* argument check */
     if (hardware_id == NULL) {
         printf("hardware_id is NULL.\n");
         return CCS811_ERROR;
@@ -281,6 +280,7 @@ int8_t ccs811_get_hardware_id(uint8_t *hardware_id)
 
 int8_t ccs811_get_hardware_version(uint8_t *hardware_version)
 {
+    /* argument check */
     if (hardware_version == NULL) {
         printf("hardware_version is NULLl\n");
         return CCS811_ERROR;
@@ -298,6 +298,7 @@ int8_t ccs811_get_hardware_version(uint8_t *hardware_version)
 
 int8_t ccs811_get_firmware_bootloader_version(uint16_t *bootloader_version)
 {
+    /* argument check */
     if (bootloader_version == NULL) {
         printf("bootloader_version is NULL\n");
         return CCS811_ERROR;
@@ -319,6 +320,7 @@ int8_t ccs811_get_firmware_bootloader_version(uint16_t *bootloader_version)
 
 int8_t ccs811_get_firmware_app_version(uint16_t *app_version)
 {
+    /* argument check */
     if (app_version == NULL) {
         printf("app_version is NULL\n");
         return CCS811_ERROR;
@@ -340,6 +342,7 @@ int8_t ccs811_get_firmware_app_version(uint16_t *app_version)
 
 int8_t ccs811_get_error_id(uint8_t *error_id)
 {
+    /* argument check */
     if (error_id == NULL) {
         printf("error_id is NULL\n");
     }
@@ -372,8 +375,8 @@ int8_t ccs811_get_error_id(uint8_t *error_id)
     return status;
 }
 
-int8_t ccs811_software_reset(void){
-
+int8_t ccs811_software_reset(void)
+{
     int8_t status = CCS811_SUCCESS;
     static uint8_t software_reset[SOFTWARE_RESET_ARRAY_LENGTH] = {
         SOFTWARE_RESET_FIRST_BYTE,
@@ -394,9 +397,10 @@ int8_t ccs811_software_reset(void){
     return status;
 }
 
-/* CCS811レジスタへの書き込み */
+/* Writing to the CCS811 register. */
 int8_t ccs811_write_reg(uint8_t reg_address, uint8_t *data, uint8_t size)
 {
+    /* argument check */
     if (data == NULL) {
         return CCS811_ERROR;
     }
@@ -454,9 +458,10 @@ ERROR:
     return CCS811_ERROR;
 }
 
-/* CCS811レジスタの読み取り */
+/* Reading from the CCS811 register. */
 int8_t ccs811_read_reg(uint8_t reg_address, uint8_t *data, uint8_t size)
 {
+    /* argument check */
     if (data == NULL) {
         return CCS811_ERROR;
     }
