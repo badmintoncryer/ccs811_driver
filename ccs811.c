@@ -188,6 +188,22 @@ int8_t ccs811_get_hardware_id(uint8_t *hardware_id)
     return status;
 }
 
+int8_t ccs811_get_hardware_version(uint8_t *hardware_version)
+{
+    if (hardware_version == NULL) {
+        printf("hardware_version is NULLl\n");
+    }
+
+    uint8_t status = CCS811_SUCCESS;
+    status = ccs811_read_reg(0x21, hardware_version, 1);
+
+    if (status != CCS811_SUCCESS) {
+        printf("Get hardware version is failed.\n");
+    }
+
+    return status;
+}
+
 /* CCS811レジスタへの書き込み */
 int8_t ccs811_write_reg(uint8_t reg_address, uint8_t *data, uint8_t size)
 {
