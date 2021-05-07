@@ -33,7 +33,7 @@ int8_t ccs811_init(ccs811_config_t *ccs811_config)
     uint8_t hardware_id = 0;
     uint8_t status_reg_val = 0;
 
-    status = ccs811_read_reg(0x20, &hardware_id, 1);
+    status = ccs811_get_hardware_id(&hardware_id);
     if (status == CCS811_SUCCESS) {
         if (hardware_id != 0x81) {
             printf("This device is not CCS811!!\n");
@@ -170,8 +170,23 @@ int8_t ccs811_write_eco2_threshold(ccs811_eco2_threshold_t *eco2_threshold)
 
     if (status != CCS811_SUCCESS) {
         printf("write eco2 threshold is failed\n");
-    } else {
-        printf("write eco2 threshold is succeeded.\n");
+    }
+
+    return status;
+}
+
+int8_t ccs811_get_hardware_id(uint8_t *hardware_id)
+{
+    if (hardware_id == NULL) {
+        printf("hardware_id is NULL.\n");
+        return CCS811_ERROR;
+    }
+
+    uint8_t status = CCS811_SUCCESS;
+    status = ccs811_read_reg(0x20, hardware_id, 1);
+
+    if (status != CCS811_SUCCESS) {
+        printf("Get hardware ID is failed.\n");
     }
 
     return status;
